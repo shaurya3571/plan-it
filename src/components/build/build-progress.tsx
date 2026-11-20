@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Clock, Loader2, TriangleAlert } from "lucide-react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { buildPreview } from "@/content/app-preview";
 import { formatClock } from "@/lib/plan";
@@ -89,39 +90,53 @@ export function BuildProgress({
 
   useEffect(() => {
     const supabase = createClient();
-    const channel = supabase
-      .channel(`build-${job.jobId}`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "build_jobs",
-          filter: `id=eq.${job.jobId}`,
-        },
-        (payload) => setJob((prev) => ({ ...prev, ...toJob(payload.new as Row) })),
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "build_steps",
-          filter: `build_job_id=eq.${job.jobId}`,
-        },
-        (payload) => {
-          const next = toStep(payload.new as Row);
-          setSteps((prev) =>
-            prev.some((step) => step.idx === next.idx)
-              ? prev.map((step) => (step.idx === next.idx ? next : step))
-              : [...prev, next].sort((a, b) => a.idx - b.idx),
-          );
-        },
-      )
-      .subscribe((status) => setLive(status === "SUBSCRIBED"));
+    let channel: RealtimeChannel | undefined;
+    let cancelled = false;
+
+    void (async () => {
+      // Realtime authorises postgres_changes over its own socket, which does not
+      // pick up the cookie session on its own. Without the signed-in user's JWT it
+      // connects as anon, and the owner-scoped policy on these tables filters that
+      // to nothing: the channel subscribes happily and no event ever arrives.
+      const { data } = await supabase.auth.getSession();
+      if (data.session) await supabase.realtime.setAuth(data.session.access_token);
+      if (cancelled) return;
+
+      channel = supabase
+        .channel(`build-${job.jobId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "UPDATE",
+            schema: "public",
+            table: "build_jobs",
+            filter: `id=eq.${job.jobId}`,
+          },
+          (payload) => setJob((prev) => ({ ...prev, ...toJob(payload.new as Row) })),
+        )
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "build_steps",
+            filter: `build_job_id=eq.${job.jobId}`,
+          },
+          (payload) => {
+            const next = toStep(payload.new as Row);
+            setSteps((prev) =>
+              prev.some((step) => step.idx === next.idx)
+                ? prev.map((step) => (step.idx === next.idx ? next : step))
+                : [...prev, next].sort((a, b) => a.idx - b.idx),
+            );
+          },
+        )
+        .subscribe((status) => setLive(status === "SUBSCRIBED"));
+    })();
 
     return () => {
-      void supabase.removeChannel(channel);
+      cancelled = true;
+      if (channel) void supabase.removeChannel(channel);
     };
   }, [job.jobId]);
 

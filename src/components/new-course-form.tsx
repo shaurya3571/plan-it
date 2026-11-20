@@ -42,7 +42,9 @@ export function NewCourseForm({ minutesPerDay }: { minutesPerDay: number }) {
           <input
             id="yt-url"
             name="url"
-            type="url"
+            // Not type="url": that rejects the scheme-less "youtube.com/watch?v=..."
+            // this placeholder asks for, which parseYoutubeUrl accepts on purpose.
+            type="text"
             inputMode="url"
             value={url}
             disabled={isPending}
