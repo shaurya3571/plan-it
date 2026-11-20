@@ -2,12 +2,14 @@ import Link from "next/link";
 import { ThemedLandscape } from "@/components/landscape-scene";
 import { EmHeading, Pill } from "@/components/landing/section-head";
 import { Button } from "@/components/ui/button";
-import { GitHubIcon, GoogleIcon, XIcon } from "@/components/provider-icons";
+import { GitHubIcon, GoogleIcon } from "@/components/provider-icons";
+import { signInWithProvider } from "./actions";
 
+// X dropped for now: its developer platform may require a paid plan. Add it
+// back here (and wire its credentials in Supabase Auth) if that changes.
 const providers = [
-  { name: "Google", Icon: GoogleIcon },
-  { name: "GitHub", Icon: GitHubIcon },
-  { name: "X", Icon: XIcon },
+  { id: "google" as const, name: "Google", Icon: GoogleIcon },
+  { id: "github" as const, name: "GitHub", Icon: GitHubIcon },
 ];
 
 const FLOAT_SQUARES = [
@@ -38,21 +40,14 @@ export default function LoginPage() {
           Your streak, your plan and your notes are waiting.
         </p>
 
-        {/* No auth backend yet — these land on the dashboard mock. */}
         <div className="flex w-full flex-col gap-2.5">
-          {providers.map(({ name, Icon }) => (
-            <Button
-              key={name}
-              asChild
-              variant="quiet"
-              size="pill"
-              className="w-full bg-surface"
-            >
-              <Link href="/dashboard">
+          {providers.map(({ id, name, Icon }) => (
+            <form key={id} action={signInWithProvider.bind(null, id)} className="w-full">
+              <Button type="submit" variant="quiet" size="pill" className="w-full bg-surface">
                 <Icon />
                 Continue with {name}
-              </Link>
-            </Button>
+              </Button>
+            </form>
           ))}
         </div>
 
