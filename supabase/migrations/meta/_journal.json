@@ -22,6 +22,20 @@
       "when": 1795174548645,
       "tag": "0002_profiles_rls",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1795178577472,
+      "tag": "0003_citext_extension_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1795178577873,
+      "tag": "0004_handle_new_user_revoke_execute",
+      "breakpoints": true
     }
   ]
 }
