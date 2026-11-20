@@ -5,6 +5,22 @@ export function daysForCourse(totalMinutes: number, minutesPerDay: number) {
 }
 
 /**
+ * "Python for AI - Full Beginner Course" -> "python-for-ai-full-beginner-course-np4k".
+ * The suffix keeps two courses of the same name apart; courses.slug is unique, so a
+ * collision fails the insert rather than overwriting anything.
+ */
+export function courseSlug(title: string) {
+  const base = title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^\p{Letter}\p{Number}]+/gu, "-")
+    .slice(0, 60)
+    .replace(/^-+|-+$/g, "");
+  const suffix = Math.random().toString(36).slice(2, 6).padEnd(4, "0");
+  return `${base || "course"}-${suffix}`;
+}
+
+/**
  * Greedy fill, which is what the hand-written course data imitates: a lesson
  * goes on today unless it would push today past the budget. A lesson longer
  * than the whole budget still gets a day of its own rather than being dropped.

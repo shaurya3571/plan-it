@@ -1,41 +1,35 @@
 "use client";
 
-import { useState } from "react";
+import { useActionState, useState } from "react";
 import Image from "next/image";
-import { Check, Link2, ListVideo, Loader2, Video } from "lucide-react";
+import { Link2, ListVideo, Loader2, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { parseYoutubeUrl, type YoutubeTarget } from "@/lib/youtube";
 import { features } from "@/content/landing";
-import { buildPreview } from "@/content/app-preview";
-import { daysForCourse } from "@/lib/plan";
+import { startBuild, type BuildFormState } from "@/app/(shell)/new/actions";
 
 const PACE = features.pace.options;
-/** shortcut: fixed sample length, no API to ask YouTube how long the video is. */
-const SAMPLE_MINUTES = 316;
+const EMPTY: BuildFormState = { error: null };
 
-type Stage = "idle" | "building";
-
-export function NewCourseForm() {
+export function NewCourseForm({ minutesPerDay }: { minutesPerDay: number }) {
   const [url, setUrl] = useState("");
-  const [perDay, setPerDay] = useState<number>(90);
-  const [stage, setStage] = useState<Stage>("idle");
-  const [error, setError] = useState<string | null>(null);
+  const [perDay, setPerDay] = useState(minutesPerDay);
+  const [state, formAction, isPending] = useActionState(startBuild, EMPTY);
+  const [touched, setTouched] = useState(false);
 
   const target: YoutubeTarget = parseYoutubeUrl(url);
-  const days = daysForCourse(SAMPLE_MINUTES, perDay);
-
-  function build() {
-    if (!target) {
-      setError("That doesn't look like a YouTube video or playlist link.");
-      return;
-    }
-    setError(null);
-    setStage("building");
-  }
+  // the server checks the link again; this is only so a typo shows up before submitting
+  const clientError =
+    touched && url.length > 0 && !target
+      ? "That doesn't look like a YouTube video or playlist link."
+      : null;
+  const error = clientError ?? state.error;
 
   return (
-    <div className="mt-8">
+    <form action={formAction} className="mt-8">
+      <input type="hidden" name="minutesPerDay" value={perDay} />
+
       <label
         htmlFor="yt-url"
         className="font-mono text-label tracking-[0.07em] text-ink-soft uppercase"
@@ -47,21 +41,20 @@ export function NewCourseForm() {
           <Link2 className="size-4 shrink-0 text-moss" />
           <input
             id="yt-url"
+            name="url"
             type="url"
             inputMode="url"
             value={url}
-            disabled={stage === "building"}
-            onChange={(e) => {
-              setUrl(e.target.value);
-              setError(null);
-            }}
+            disabled={isPending}
+            onChange={(e) => setUrl(e.target.value)}
+            onBlur={() => setTouched(true)}
             placeholder="youtube.com/watch?v=…"
             className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-ink-soft"
           />
         </div>
-        <Button size="pill" onClick={build} disabled={stage === "building" || !url}>
-          {stage === "building" ? <Loader2 className="animate-spin" /> : null}
-          {stage === "building" ? "Building" : "Build course"}
+        <Button size="pill" type="submit" disabled={isPending || !url}>
+          {isPending ? <Loader2 className="animate-spin" /> : null}
+          {isPending ? "Building" : "Build course"}
         </Button>
       </div>
 
@@ -71,7 +64,7 @@ export function NewCourseForm() {
         </p>
       )}
 
-      {target && stage === "idle" && (
+      {target && !isPending && (
         <div className="mt-4 flex items-center gap-4 rounded-card bg-surface p-4 shadow-hairline">
           {target.kind === "video" ? (
             <div className="relative aspect-video w-32 shrink-0 overflow-hidden rounded-xl bg-muted">
@@ -104,7 +97,7 @@ export function NewCourseForm() {
         </div>
       )}
 
-      <fieldset className="mt-8" disabled={stage === "building"}>
+      <fieldset className="mt-8" disabled={isPending}>
         <legend className="font-mono text-label tracking-[0.07em] text-ink-soft uppercase">
           Minutes a day
         </legend>
@@ -117,48 +110,19 @@ export function NewCourseForm() {
               onClick={() => setPerDay(option)}
               className={cn(
                 "h-11 rounded-full px-3.5 text-[0.88rem] font-medium transition-colors",
-                perDay === option
-                  ? "bg-moss text-on-moss"
-                  : "ring-line hover:bg-muted",
+                perDay === option ? "bg-moss text-on-moss" : "ring-line hover:bg-muted",
               )}
             >
               {option} min
             </button>
           ))}
         </div>
+        {/* The course length is only known once the server has asked YouTube, so the
+            day count belongs on the build screen rather than here. */}
         <p className="mt-[18px] font-display text-[2.4rem] leading-[1.05] tracking-[-0.02em] tabular-nums">
-          A 5h course · {days} {days === 1 ? "day" : "days"}
+          {perDay} minutes a day
         </p>
       </fieldset>
-
-      {stage === "building" && (
-        <section className="mt-8 rounded-card bg-surface p-[26px] shadow-hairline">
-          <h2 className="text-[1.35rem]">
-            Building your <em className="italic text-moss">course.</em>
-          </h2>
-          <p className="mt-1.5 text-[0.92rem] text-ink-soft">{buildPreview.note}</p>
-
-          <ul className="mt-5 space-y-2">
-            {buildPreview.tasks.map((task) => (
-              <li
-                key={task.label}
-                className="flex items-center gap-3 rounded-xl bg-muted px-3.5 py-2.5 text-[0.88rem]"
-              >
-                <span className="shrink-0 font-mono text-[0.78rem] text-ink-soft tabular-nums">
-                  {task.at}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-ink">{task.label}</span>
-                <Check className="size-4 shrink-0 text-moss" />
-              </li>
-            ))}
-          </ul>
-
-          <p className="mt-5 text-[0.88rem] text-ink-soft">
-            {/* No backend — this screen is the design, not a running build. */}
-            Preview only: plan-it has no build service yet, so this stops here.
-          </p>
-        </section>
-      )}
-    </div>
+    </form>
   );
 }

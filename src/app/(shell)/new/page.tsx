@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { NewCourseForm } from "@/components/new-course-form";
+import { requireProfile } from "@/server/auth/guards";
 
 export const metadata: Metadata = { title: "New course" };
 
-export default function NewCoursePage() {
+export default async function NewCoursePage() {
+  const { minutesPerDay } = await requireProfile();
+
   return (
     <div className="mx-auto w-full max-w-[860px] px-4 pt-8 pb-20 sm:px-6 lg:pt-[108px]">
       <h1 className="text-[clamp(1.8rem,3.6vw,2.6rem)]">
@@ -14,7 +17,7 @@ export default function NewCoursePage() {
         while the rest is written.
       </p>
 
-      <NewCourseForm />
+      <NewCourseForm minutesPerDay={minutesPerDay} />
     </div>
   );
 }
