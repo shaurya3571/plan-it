@@ -42,9 +42,12 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  // /api is excluded: the Inngest endpoint authenticates with its own signing key
-  // and has no session to refresh, so running getUser() on every call is wasted work.
+  // Framework and API paths are excluded wholesale. Matching only _next/static and
+  // _next/image left every other /_next request - including the dev server's hot
+  // reload channel - running a Supabase getUser() round trip, which is both wasted
+  // work and enough to break hot reload. Page navigations and their RSC prefetches
+  // use the route's own path, so they still pass through here.
   matcher: [
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!api|_next|__nextjs|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
