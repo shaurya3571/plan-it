@@ -1,5 +1,10 @@
 import postgres from "postgres";
-import { courseDetails, popularCourses } from "../src/content/courses.ts";
+import {
+  courseDetails,
+  popularCourses,
+  type Course,
+  type Lesson,
+} from "../src/content/courses.ts";
 
 /**
  * Loads the hand-written course list into Postgres, so the course pages - which
@@ -33,6 +38,29 @@ type LessonRow = {
   video_external_id: string;
   status: string;
 };
+
+/**
+ * Only one entry in src/content/courses.ts carries a real lesson list. The rest get
+ * evenly split placeholders so every card on the landing page and /community opens
+ * instead of 404ing. Building one of these for real replaces them with written lessons.
+ */
+function placeholderLessons(course: Course): Lesson[] {
+  const count = Math.max(1, course.lessonCount);
+  const even = Math.floor(course.minutes / count);
+  // hand the leftover minutes to the first lessons so the parts still add up to the course
+  let spare = course.minutes - even * count;
+
+  return Array.from({ length: count }, (_, i) => {
+    const extra = spare > 0 ? 1 : 0;
+    spare -= extra;
+    return {
+      n: i + 1,
+      title: `Part ${i + 1}`,
+      summary: "Placeholder from the seed. Build this course to get written lessons.",
+      minutes: Math.max(1, even + extra),
+    };
+  });
+}
 
 async function seed() {
   let courseCount = 0;
@@ -73,39 +101,36 @@ async function seed() {
     courseCount += 1;
 
     const detail = courseDetails[course.slug];
-    if (!detail) {
-      // Only one entry has a real lesson list. The rest show as cards and 404 when
-      // opened, which is what they did before the pages read the database.
-      console.log(`  ${course.slug} - course row only`);
-      continue;
-    }
+    const plan = detail
+      ? detail.days.flatMap((day) => day.lessons)
+      : placeholderLessons(course);
 
     // Lesson times are not in the content, so they are laid end to end from the
     // lesson lengths, which is how the hand-written data was built.
     let at = 0;
-    const rows: LessonRow[] = detail.days
-      .flatMap((day) => day.lessons)
-      .map((lesson) => {
-        const startSeconds = at;
-        at += lesson.minutes * 60;
-        return {
-          course_id: row!.id,
-          n: lesson.n,
-          title: lesson.title,
-          summary: lesson.summary,
-          start_seconds: startSeconds,
-          end_seconds: at,
-          minutes: lesson.minutes,
-          video_external_id: course.youtubeId,
-          status: "ready",
-        };
-      });
+    const rows: LessonRow[] = plan.map((lesson) => {
+      const startSeconds = at;
+      at += lesson.minutes * 60;
+      return {
+        course_id: row!.id,
+        n: lesson.n,
+        title: lesson.title,
+        summary: lesson.summary,
+        start_seconds: startSeconds,
+        end_seconds: at,
+        minutes: lesson.minutes,
+        video_external_id: course.youtubeId,
+        status: "ready",
+      };
+    });
 
     // cascades to note blocks and quizzes, so a re-seed cannot leave orphans
     await sql`delete from lessons where course_id = ${row!.id}`;
     await sql`insert into lessons ${sql(rows)}`;
     lessonCount += rows.length;
-    console.log(`  ${course.slug} - ${rows.length} lessons`);
+    console.log(
+      `  ${course.slug} - ${rows.length} lessons${detail ? "" : " (placeholder)"}`,
+    );
   }
 
   console.log(`\nSeeded ${courseCount} courses and ${lessonCount} lessons.`);
