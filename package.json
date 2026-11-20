@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "eslint",
     "test": "node --test \"src/**/*.test.ts\"",
+    "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
