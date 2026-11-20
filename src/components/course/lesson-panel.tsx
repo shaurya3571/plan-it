@@ -4,16 +4,52 @@ import { useState } from "react";
 import { Check, Play, RotateCcw, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { lessonSample } from "@/content/lesson";
+import { formatClock } from "@/lib/plan";
 
 const TABS = ["Video", "Article", "Quiz"] as const;
 
-export function LessonPanel({ youtubeId }: { youtubeId: string }) {
+export type LessonNoteBlock = { heading: string; body: string };
+export type LessonQuiz = {
+  question: string;
+  /** quizzes.explanation is nullable, so the panel must cope without one */
+  explanation: string | null;
+  replayAtSeconds: number | null;
+  options: { text: string; isCorrect: boolean }[];
+};
+
+export function LessonPanel({
+  youtubeId,
+  noteBlocks = [],
+  quiz: generated = null,
+}: {
+  youtubeId: string;
+  noteBlocks?: LessonNoteBlock[];
+  quiz?: LessonQuiz | null;
+}) {
   const [tab, setTab] = useState<(typeof TABS)[number]>("Video");
   const [picked, setPicked] = useState<number | null>(null);
 
-  const quiz = lessonSample.quiz;
+  // A seeded course has no generated notes or quiz, so the sample stands in
+  // rather than leaving the Article and Quiz tabs empty.
+  const article: readonly LessonNoteBlock[] =
+    noteBlocks.length > 0 ? noteBlocks : lessonSample.article;
+  const quiz: LessonQuiz =
+    generated ?? {
+      question: lessonSample.quiz.question,
+      explanation: lessonSample.quiz.explanation,
+      replayAtSeconds: null,
+      options: lessonSample.quiz.options.map((option) => ({
+        text: option.text,
+        isCorrect: option.correct,
+      })),
+    };
+  const replayAt =
+    quiz.replayAtSeconds === null
+      ? lessonSample.quiz.replayAt
+      : formatClock(quiz.replayAtSeconds);
+
   const answered = picked !== null;
-  const correct = answered && quiz.options[picked].correct;
+  const correct = answered && quiz.options[picked]!.isCorrect;
 
   return (
     <div>
@@ -50,7 +86,7 @@ export function LessonPanel({ youtubeId }: { youtubeId: string }) {
 
         {tab === "Article" && (
           <article className="rounded-card bg-surface p-[26px] shadow-hairline">
-            {lessonSample.article.map((block) => (
+            {article.map((block) => (
               <section key={block.heading} className="mt-6 first:mt-0">
                 <h3 className="text-[1.15rem] font-medium">{block.heading}</h3>
                 <p className="mt-2 text-[0.98rem] leading-relaxed text-ink-soft">
@@ -77,12 +113,12 @@ export function LessonPanel({ youtubeId }: { youtubeId: string }) {
                       className={cn(
                         "flex w-full items-center gap-2.5 rounded-xl px-3.5 py-3 text-left text-[0.92rem] transition-colors",
                         !chosen && "ring-line hover:bg-muted",
-                        chosen && option.correct && "bg-ok-bg text-ok-fg",
-                        chosen && !option.correct && "bg-err-bg text-err-fg",
+                        chosen && option.isCorrect && "bg-ok-bg text-ok-fg",
+                        chosen && !option.isCorrect && "bg-err-bg text-err-fg",
                       )}
                     >
                       {chosen &&
-                        (option.correct ? (
+                        (option.isCorrect ? (
                           <Check className="size-4 shrink-0" />
                         ) : (
                           <X className="size-4 shrink-0" />
@@ -101,10 +137,10 @@ export function LessonPanel({ youtubeId }: { youtubeId: string }) {
                 className="mt-4 inline-flex h-9 items-center gap-1.5 rounded-full bg-moss px-3.5 text-[0.88rem] font-medium text-on-moss"
               >
                 <RotateCcw className="size-3.5" />
-                Replay {quiz.replayAt} that explains it
+                Replay {replayAt} that explains it
               </button>
             )}
-            {answered && correct && (
+            {answered && correct && quiz.explanation && (
               <p className="mt-4 text-[0.92rem] text-ink-soft">{quiz.explanation}</p>
             )}
           </div>

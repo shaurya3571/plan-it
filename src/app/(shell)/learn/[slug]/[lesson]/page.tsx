@@ -4,15 +4,13 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LessonPanel } from "@/components/course/lesson-panel";
-import { getCourse } from "@/content/courses";
+import { getCourseLessonList, getLessonDetail } from "@/server/courses";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/learn/[slug]/[lesson]">): Promise<Metadata> {
   const { slug, lesson } = await params;
-  const course = getCourse(slug);
-  const all = course?.days.flatMap((d) => d.lessons) ?? [];
-  const current = all.find((l) => String(l.n) === lesson);
+  const current = await getLessonDetail(slug, Number(lesson));
   return { title: current?.title ?? "Lesson" };
 }
 
@@ -20,21 +18,22 @@ export default async function LessonPage({
   params,
 }: PageProps<"/learn/[slug]/[lesson]">) {
   const { slug, lesson } = await params;
-  const course = getCourse(slug);
-  if (!course) notFound();
+  const n = Number(lesson);
+  if (!Number.isInteger(n) || n < 1) notFound();
 
-  const all = course.days.flatMap((d) => d.lessons);
-  const current = all.find((l) => String(l.n) === lesson);
+  const current = await getLessonDetail(slug, n);
   if (!current) notFound();
+
+  const all = await getCourseLessonList(slug);
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 pt-8 pb-20 sm:px-6 lg:pt-[108px]">
       <Link
-        href={`/courses/${course.slug}`}
+        href={`/courses/${slug}`}
         className="inline-flex items-center gap-1.5 text-[0.88rem] text-ink-soft transition-colors hover:text-ink"
       >
         <ArrowLeft className="size-4" />
-        {course.title}
+        {current.courseTitle}
       </Link>
 
       <p className="mt-5 font-mono text-label tracking-[0.07em] text-ink-soft uppercase">
@@ -46,7 +45,11 @@ export default async function LessonPage({
       </p>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,2.2fr)_minmax(0,1fr)]">
-        <LessonPanel youtubeId={course.youtubeId} />
+        <LessonPanel
+          youtubeId={current.videoExternalId}
+          noteBlocks={current.noteBlocks}
+          quiz={current.quiz}
+        />
 
         <aside>
           <h2 className="text-[1.15rem]">In this course</h2>
@@ -54,7 +57,7 @@ export default async function LessonPage({
             {all.slice(0, 16).map((l, i) => (
               <li key={l.n}>
                 <Link
-                  href={`/learn/${course.slug}/${l.n}`}
+                  href={`/learn/${slug}/${l.n}`}
                   aria-current={l.n === current.n ? "page" : undefined}
                   className={cn(
                     "flex items-baseline gap-3 px-4 py-3 text-[0.88rem] transition-colors",

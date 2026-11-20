@@ -57,6 +57,12 @@ export function formatDuration(minutes: number) {
   return `${h}h ${String(m).padStart(2, "0")}m`;
 }
 
+/** 252 -> "4:12". A point on the clock, for a quiz replay or a step's elapsed time. */
+export function formatClock(seconds: number) {
+  const safe = Math.max(0, Math.round(seconds));
+  return `${Math.floor(safe / 60)}:${String(safe % 60).padStart(2, "0")}`;
+}
+
 /** 12 -> "12m" for a single lesson row. */
 export function formatLesson(minutes: number) {
   return `${minutes}m`;

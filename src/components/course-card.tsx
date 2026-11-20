@@ -36,10 +36,7 @@ export function CourseCard({
         <h3 className="line-clamp-2 text-[1.05rem] leading-snug">{course.title}</h3>
         <p className="mt-1.5 text-[0.88rem] text-ink-soft">{course.creator}</p>
 
-        <div className="mt-auto flex items-center justify-between gap-2 border-t border-line pt-3 text-[0.78rem] text-ink-soft">
-          <span className="truncate">
-            added by <span className="font-medium text-ink">{course.addedBy}</span>
-          </span>
+        <div className="mt-auto flex items-center justify-end gap-2 border-t border-line pt-3 text-[0.78rem] text-ink-soft">
           <span className="shrink-0 tabular-nums">{course.learning} learning</span>
         </div>
       </div>

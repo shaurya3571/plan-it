@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { ArrowLeft, Check, Clock, Loader2, TriangleAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { buildPreview } from "@/content/app-preview";
+import { formatClock } from "@/lib/plan";
 import { createClient } from "@/server/auth/client";
 
 export type JobRow = {
@@ -67,8 +68,7 @@ function toStep(row: Row): StepRow {
 /** "0:06" since the job started, which is what the step list shows per row. */
 function elapsed(jobStartedAt: string | null, at: string | null) {
   if (!jobStartedAt || !at) return "—";
-  const seconds = Math.max(0, Math.round((Date.parse(at) - Date.parse(jobStartedAt)) / 1000));
-  return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+  return formatClock((Date.parse(at) - Date.parse(jobStartedAt)) / 1000);
 }
 
 export function BuildProgress({

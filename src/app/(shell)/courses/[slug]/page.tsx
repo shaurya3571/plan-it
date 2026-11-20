@@ -5,27 +5,28 @@ import { notFound } from "next/navigation";
 import { Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DayPlan } from "@/components/course/day-plan";
-import { courseDetails, getCourse, thumbnailUrl } from "@/content/courses";
+import { thumbnailUrl } from "@/content/courses";
 import { formatDuration } from "@/lib/plan";
+import { requireProfile } from "@/server/auth/guards";
+import { getCourseDetail, getCourseTitle } from "@/server/courses";
 
-export function generateStaticParams() {
-  return Object.keys(courseDetails).map((slug) => ({ slug }));
-}
+// No generateStaticParams: a course built from a pasted link cannot be known
+// at build time, so this route is resolved per request.
 
 export async function generateMetadata({
   params,
 }: PageProps<"/courses/[slug]">): Promise<Metadata> {
   const { slug } = await params;
-  const course = getCourse(slug);
-  return { title: course?.title ?? "Course not found" };
+  return { title: (await getCourseTitle(slug)) ?? "Course not found" };
 }
 
 export default async function CoursePage({ params }: PageProps<"/courses/[slug]">) {
   const { slug } = await params;
-  const course = getCourse(slug);
+  const { minutesPerDay } = await requireProfile();
+  const course = await getCourseDetail(slug, minutesPerDay);
   if (!course) notFound();
 
-  const firstLesson = course.days[0].lessons[0];
+  const firstLesson = course.days[0]!.lessons[0]!;
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 pt-8 pb-20 sm:px-6 lg:pt-[108px]">

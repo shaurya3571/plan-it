@@ -5,7 +5,6 @@ export type Course = {
   /** total video length in minutes */
   minutes: number;
   lessonCount: number;
-  addedBy: string;
   learning: number;
   youtubeId: string;
 };
@@ -30,7 +29,6 @@ export const popularCourses: Course[] = [
     creator: "CodeWithHarry",
     minutes: 654,
     lessonCount: 62,
-    addedBy: "Phonk",
     learning: 66,
     youtubeId: "UrsmFxEIp5k",
   },
@@ -40,7 +38,6 @@ export const popularCourses: Course[] = [
     creator: "Dave Ebbelaar",
     minutes: 316,
     lessonCount: 37,
-    addedBy: "ABHISHEK",
     learning: 34,
     youtubeId: "ygXn5nV5qFc",
   },
@@ -51,7 +48,6 @@ export const popularCourses: Course[] = [
     creator: "VIRTUAL CODE",
     minutes: 577,
     lessonCount: 58,
-    addedBy: "ABHISHEK",
     learning: 32,
     youtubeId: "_itqpLVS660",
   },
@@ -62,7 +58,6 @@ export const popularCourses: Course[] = [
     creator: "Satish Dhawale",
     minutes: 907,
     lessonCount: 74,
-    addedBy: "Ramu",
     learning: 23,
     youtubeId: "wGBKI6B945w",
   },
@@ -72,7 +67,6 @@ export const popularCourses: Course[] = [
     creator: "Dave Ebbelaar",
     minutes: 190,
     lessonCount: 24,
-    addedBy: "Manish",
     learning: 21,
     youtubeId: "XzjSx7u9mGw",
   },
@@ -83,7 +77,6 @@ export const popularCourses: Course[] = [
     creator: "Krish Naik",
     minutes: 673,
     lessonCount: 68,
-    addedBy: "Bhanuranjan",
     learning: 16,
     youtubeId: "rV3HJ4LEZ7k",
   },
@@ -361,6 +354,11 @@ export const pythonForAiLessons: Lesson[][] = [
   ],
 ];
 
+/**
+ * The one course with a full hand-written lesson list. The pages read Postgres
+ * now; this is what the seed script loads into it, and what the mock providers
+ * return so a keyless build produces something realistic.
+ */
 export const courseDetails: Record<string, CourseDetail> = {
   "python-for-ai-full-beginner-course-np4k": {
     ...popularCourses[1],
@@ -368,7 +366,3 @@ export const courseDetails: Record<string, CourseDetail> = {
     days: pythonForAiLessons.map((lessons) => ({ lessons })),
   },
 };
-
-export function getCourse(slug: string) {
-  return courseDetails[slug] ?? null;
-}
