@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { seededRandom } from "./seeded-random.ts";
-import { daysForCourse, formatDuration } from "./plan.ts";
+import { daysForCourse, formatDuration, initials } from "./plan.ts";
 import { parseYoutubeUrl } from "./youtube.ts";
 
 test("seededRandom is deterministic for a seed", () => {
@@ -52,6 +52,13 @@ test("parseYoutubeUrl accepts the shapes people paste", () => {
     ),
     { kind: "playlist", id: "PL-osiE80TeTsqhIuOqKhwlXsIBIdSeYtc" },
   );
+});
+
+test("initials derives a sidebar avatar from a display name", () => {
+  assert.equal(initials("Shaurya Agrawal"), "SA");
+  assert.equal(initials("shaurya"), "S");
+  assert.equal(initials("  Shaurya   Agrawal  "), "SA");
+  assert.equal(initials(""), "?");
 });
 
 test("parseYoutubeUrl rejects anything that is not YouTube", () => {

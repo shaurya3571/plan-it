@@ -4,11 +4,11 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Plus, Route, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { learner, sidebarNav } from "@/content/shell";
+import { sidebarNav } from "@/content/shell";
 
 const icons = { home: Home, plus: Plus, users: Users, route: Route };
 
-export function AppSidebar() {
+export function AppSidebar({ name, initials }: { name: string; initials: string }) {
   const pathname = usePathname();
 
   return (
@@ -39,9 +39,9 @@ export function AppSidebar() {
       <div className="mt-auto px-3">
         <div className="flex items-center gap-2.5 px-1.5">
           <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-lime-soft font-mono text-[0.7rem] text-pill-ink">
-            {learner.initials}
+            {initials}
           </span>
-          <span className="truncate text-[0.88rem] text-ink">{learner.name}</span>
+          <span className="truncate text-[0.88rem] text-ink">{name}</span>
         </div>
       </div>
     </aside>

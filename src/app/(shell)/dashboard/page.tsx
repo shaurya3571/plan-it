@@ -4,17 +4,21 @@ import { ArrowRight, Flame, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { CourseCard } from "@/components/course-card";
 import { learner } from "@/content/shell";
+import { requireProfile } from "@/server/auth/guards";
 
 export const metadata: Metadata = { title: "Home" };
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const { displayName, minutesPerDay, streakCount } = await requireProfile();
+  // today/enrolled/roadmaps still mock: the build pipeline and enrollments
+  // that would produce them don't exist yet (Phase 2/3).
   const { today } = learner;
   const progress = Math.round((today.lessonsDone / today.lessonsTotal) * 100);
 
   return (
     <div className="mx-auto w-full max-w-[1180px] px-4 pt-8 pb-20 sm:px-6 lg:pt-[108px]">
       <h1 className="text-[clamp(1.8rem,3.6vw,2.6rem)]">
-        Welcome back, <em className="italic text-moss">{learner.name}.</em>
+        Welcome back, <em className="italic text-moss">{displayName}.</em>
       </h1>
 
       <div className="mt-6 grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
@@ -58,10 +62,10 @@ export default function DashboardPage() {
               Streak
             </p>
             <p className="mt-2 font-display text-[2.6rem] leading-none tabular-nums">
-              {learner.streak}
+              {streakCount}
             </p>
             <p className="mt-1 text-[0.88rem] opacity-80">
-              days in a row at {learner.minutesPerDay} min
+              days in a row at {minutesPerDay} min
             </p>
           </div>
 

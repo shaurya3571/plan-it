@@ -16,3 +16,14 @@ export function formatDuration(minutes: number) {
 export function formatLesson(minutes: number) {
   return `${minutes}m`;
 }
+
+/** "Shaurya Agrawal" -> "SA", "shaurya" -> "S", "" -> "?" for the sidebar avatar. */
+export function initials(name: string) {
+  const letters = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0]!.toUpperCase());
+  return letters.join("") || "?";
+}
