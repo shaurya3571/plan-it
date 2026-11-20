@@ -4,6 +4,35 @@ export function daysForCourse(totalMinutes: number, minutesPerDay: number) {
   return Math.max(1, Math.ceil(totalMinutes / minutesPerDay));
 }
 
+/**
+ * Greedy fill, which is what the hand-written course data imitates: a lesson
+ * goes on today unless it would push today past the budget. A lesson longer
+ * than the whole budget still gets a day of its own rather than being dropped.
+ */
+export function packIntoDays<T extends { minutes: number }>(
+  lessons: readonly T[],
+  minutesPerDay: number,
+): T[][] {
+  if (lessons.length === 0) return [];
+
+  const budget = minutesPerDay > 0 ? minutesPerDay : 90;
+  const days: T[][] = [];
+  let day: T[] = [];
+  let used = 0;
+
+  for (const lesson of lessons) {
+    if (day.length > 0 && used + lesson.minutes > budget) {
+      days.push(day);
+      day = [];
+      used = 0;
+    }
+    day.push(lesson);
+    used += lesson.minutes;
+  }
+  if (day.length > 0) days.push(day);
+  return days;
+}
+
 /** 376 -> "6h 16m", 46 -> "46m" */
 export function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60);

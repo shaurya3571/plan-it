@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { seededRandom } from "./seeded-random.ts";
-import { daysForCourse, formatDuration, initials } from "./plan.ts";
+import { daysForCourse, formatDuration, initials, packIntoDays } from "./plan.ts";
 import { parseYoutubeUrl } from "./youtube.ts";
 
 test("seededRandom is deterministic for a seed", () => {
@@ -24,6 +24,31 @@ test("daysForCourse matches the landing page: 4h course at 90 min is 3 days", ()
   assert.equal(daysForCourse(45, 90), 1);
   // never divide by zero or return 0 days
   assert.equal(daysForCourse(240, 0), 1);
+});
+
+test("packIntoDays fills a day before starting the next", () => {
+  const lessons = [12, 6, 15, 4, 5].map((minutes, i) => ({ n: i + 1, minutes }));
+
+  // 12+6+15 = 33, +4 = 37, +5 = 42, all inside a 90 minute budget
+  assert.deepEqual(
+    packIntoDays(lessons, 90).map((day) => day.map((l) => l.n)),
+    [[1, 2, 3, 4, 5]],
+  );
+  // at 20 a day: 12+6=18, then 15+4=19, then 5
+  assert.deepEqual(
+    packIntoDays(lessons, 20).map((day) => day.map((l) => l.n)),
+    [[1, 2], [3, 4], [5]],
+  );
+  assert.deepEqual(packIntoDays([], 90), []);
+  // a lesson longer than the whole budget still gets its own day rather than vanishing
+  assert.deepEqual(
+    packIntoDays([{ n: 1, minutes: 200 }], 90).map((day) => day.map((l) => l.n)),
+    [[1]],
+  );
+  // every lesson must survive the split, whatever the budget
+  for (const budget of [0, 1, 7, 90, 1000]) {
+    assert.equal(packIntoDays(lessons, budget).flat().length, lessons.length);
+  }
 });
 
 test("formatDuration pads minutes the way the course cards show them", () => {

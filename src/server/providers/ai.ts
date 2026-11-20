@@ -15,15 +15,10 @@ import {
 
 /**
  * Planning and the placement test get the bigger model; per-lesson notes and
- * quizzes are bulk work and get the cheaper one. The labels match the ones
- * build_steps.provider_label already documents.
+ * quizzes are bulk work and get the cheaper one. The user-facing names live in
+ * src/content/build-steps.ts.
  */
 type Tier = "ultra" | "super";
-
-export const PROVIDER_LABEL: Record<Tier, string> = {
-  ultra: "NEMOTRON 3 ULTRA",
-  super: "NEMOTRON 3 SUPER",
-};
 
 /** shortcut: long transcripts are truncated to this many characters rather than chunked and summarised. */
 const TRANSCRIPT_LIMIT = 12_000;
